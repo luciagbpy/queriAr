@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QueriAR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+:root{
+  --bg:#0d0b0b;
+  --surface:#141212;
+  --surface2:#1c1919;
+  --surface3:#222020;
+  --border:#2a2424;
+  --border2:#3d3535;
+  --red:#e03030;
+  --red-dim:#7a1a1a;
+  --red-soft:#1e1010;
+  --red-mid:#2a1515;
+  --text:#ede8e8;
+  --text2:#a09898;
+  --muted:#6b6060;
+  --muted2:#3d3535;
+  --green:#22c97a;
+  --blue:#5588ee;
+  --mono:'IBM Plex Mono',monospace;
+  --sans:'Syne',sans-serif;
+  --r:8px;
+  --r2:14px;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;height:100%;display:flex;flex-direction:column;overflow:hidden}
+ 
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--muted2);border-radius:2px}
+ 
+/* ── HEADER ── */
+header{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 28px;
+  border-bottom:1px solid var(--border);
+  background:var(--surface);
+  flex-shrink:0;
+  z-index:50;
+}
+.logo{display:flex;align-items:center;gap:10px;cursor:pointer}
+.logo-box{
+  width:32px;height:32px;background:var(--red);border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:10px;font-weight:500;color:#fff;
+}
+.logo-name{font-size:17px;font-weight:800;letter-spacing:-0.03em;color:var(--text)}
+.logo-name span{color:var(--red)}
+.header-crumb{
+  display:flex;align-items:center;gap:6px;
+  margin-left:4px;
+  font-family:var(--mono);font-size:11px;color:var(--muted);
+}
+.crumb-sep{color:var(--muted2)}
+.crumb-active{color:var(--text2)}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.badge{
+  font-family:var(--mono);font-size:10px;color:var(--muted);
+  background:var(--surface2);border:1px solid var(--border);
+  padding:4px 10px;border-radius:20px;letter-spacing:0.04em;
+}
+.btn-back{
+  background:transparent;border:1px solid var(--border2);
+  color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:500;
+  padding:6px 14px;border-radius:var(--r);cursor:pointer;
+  transition:all 0.15s;
+}
+.btn-back:hover{border-color:var(--muted);color:var(--text)}
+.btn-gen{
+  background:var(--red);color:#fff;border:none;
+  font-family:var(--sans);font-size:13px;font-weight:600;
+  padding:7px 20px;border-radius:var(--r);cursor:pointer;
+  transition:all 0.15s;
+}
+.btn-gen:hover{background:#c52828}
+.btn-gen:disabled{background:var(--red-dim);cursor:not-allowed;opacity:0.5}
+ 
+/* ── VIEWS ── */
+.view{display:none;flex:1;overflow:hidden;min-height:0}
+.view.active{display:flex}
+ 
+/* ════════════════════════════════
+   SCREEN 1 — SELECTOR
+════════════════════════════════ */
+#screen-select{
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:40px 28px;
+  gap:48px;
+}
+.select-hero{text-align:center}
+.select-hero h2{
+  font-size:28px;font-weight:800;letter-spacing:-0.04em;
+  color:var(--text);margin-bottom:8px;
+}
+.select-hero p{font-size:14px;color:var(--muted);font-family:var(--mono)}
+ 
+.uc-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:16px;
+  width:100%;max-width:720px;
+}
+.uc-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r2);
+  padding:24px 22px;
+  cursor:pointer;
+  transition:all 0.18s;
+  display:flex;flex-direction:column;gap:14px;
+  position:relative;overflow:hidden;
+}
+.uc-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--red);opacity:0;transition:opacity 0.18s;
+}
+.uc-card:hover{border-color:var(--red-dim);background:var(--red-soft)}
+.uc-card:hover::before{opacity:1}
+.uc-card-num{
+  font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.1em;
+}
+.uc-card-title{font-size:16px;font-weight:700;color:var(--text);letter-spacing:-0.02em}
+.uc-card-sub{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.uc-card-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.uc-tag{
+  font-size:10px;font-family:var(--mono);
+  padding:3px 8px;border-radius:20px;
+  background:var(--surface2);border:1px solid var(--border);color:var(--muted);
+}
+.uc-card-arrow{
+  margin-top:auto;font-size:11px;color:var(--red);
+  font-family:var(--mono);opacity:0;transition:opacity 0.15s;
+}
+.uc-card:hover .uc-card-arrow{opacity:1}
+ 
+/* ════════════════════════════════
+   SCREEN 2 — BUILDER
+════════════════════════════════ */
+#screen-builder{flex-direction:row;overflow:hidden}
+ 
+/* SIDEBAR */
+.sidebar{
+  width:300px;flex-shrink:0;
+  border-right:1px solid var(--border);
+  background:var(--surface);
+  overflow-y:auto;
+  overflow-x:hidden;
+  display:flex;flex-direction:column;
+  height:100%;
+}
+.sb-section{
+  padding:18px 18px 0;
+  border-bottom:1px solid var(--border);
+}
+.sb-section:last-child{border-bottom:none;padding-bottom:18px}
+.sb-label{
+  font-size:9px;font-weight:600;letter-spacing:0.14em;
+  text-transform:uppercase;color:var(--muted);
+  margin-bottom:12px;display:flex;align-items:center;gap:6px;
+}
+.sb-label .dot{width:4px;height:4px;background:var(--red);border-radius:50%;flex-shrink:0}
+ 
+/* FILTER ITEM */
+.fi{margin-bottom:14px}
+.fi-label{font-size:11px;color:var(--text2);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.fi-clear{font-size:10px;font-family:var(--mono);color:var(--muted);cursor:pointer;padding:1px 6px}
+.fi-clear:hover{color:var(--red)}
+ 
+/* CHIPS (few options) */
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:11px;font-family:var(--mono);
+  padding:4px 10px;border-radius:20px;cursor:pointer;
+  border:1px solid var(--border);background:var(--surface2);color:var(--muted);
+  transition:all 0.1s;user-select:none;white-space:nowrap;
+}
+.chip:hover{border-color:var(--border2);color:var(--text)}
+.chip.sel{background:var(--red-mid);border-color:var(--red-dim);color:#f08080}
+ 
+/* DROPDOWN MULTI-SELECT */
+.dropdown-wrap{position:relative}
+.dd-trigger{
+  width:100%;display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--text2);font-family:var(--mono);font-size:11px;
+  padding:7px 10px;border-radius:var(--r);cursor:pointer;
+  transition:border-color 0.12s;user-select:none;
+  gap:8px;
+}
+.dd-trigger:hover{border-color:var(--border2)}
+.dd-trigger.open{border-color:var(--red-dim)}
+.dd-trigger-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dd-arrow{font-size:10px;color:var(--muted);flex-shrink:0;transition:transform 0.15s}
+.dd-trigger.open .dd-arrow{transform:rotate(180deg)}
+.dd-count{
+  background:var(--red-mid);color:#f08080;border-radius:20px;
+  padding:1px 6px;font-size:10px;flex-shrink:0;
+}
+ 
+.dd-panel{
+  position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:200;
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:var(--r);overflow:hidden;
+  box-shadow:0 8px 24px #00000055;
+  display:none;
+}
+.dd-panel.open{display:block}
+.dd-search{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;border-bottom:1px solid var(--border);
+}
+.dd-search-icon{font-size:12px;color:var(--muted);flex-shrink:0}
+.dd-search input{
+  flex:1;background:transparent;border:none;outline:none;
+  color:var(--text);font-family:var(--mono);font-size:11px;
+}
+.dd-search input::placeholder{color:var(--muted2)}
+.dd-options{max-height:180px;overflow-y:auto}
+.dd-opt{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 10px;cursor:pointer;font-family:var(--mono);font-size:11px;
+  color:var(--text2);transition:background 0.1s;
+}
+.dd-opt:hover{background:var(--surface3)}
+.dd-opt.sel{color:#f08080}
+.dd-check{
+  width:14px;height:14px;border-radius:3px;flex-shrink:0;
+  border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;
+  font-size:9px;
+}
+.dd-opt.sel .dd-check{background:var(--red-mid);border-color:var(--red-dim);color:#f08080}
+.dd-empty{padding:12px 10px;font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center}
+ 
+/* TEXT INPUT filter */
+.fi-input{
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  color:var(--text);font-family:var(--mono);font-size:11px;
+  padding:7px 10px;border-radius:var(--r);outline:none;
+  transition:border-color 0.12s;
+}
+.fi-input:focus{border-color:var(--red-dim)}
+.fi-input::placeholder{color:var(--muted2)}
+ 
+/* MAIN PANEL */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);min-width:0;height:100%}
+ 
+/* SUMMARY BAR */
+.summary-bar{
+  padding:10px 24px;border-bottom:1px solid var(--border);
+  background:var(--surface);
+  display:flex;flex-wrap:wrap;gap:5px;align-items:center;
+  min-height:48px;flex-shrink:0;
+}
+.s-tag{
+  font-size:10px;font-family:var(--mono);
+  padding:3px 9px;border-radius:20px;
+  display:inline-flex;align-items:center;gap:4px;
+  white-space:nowrap;
+}
+.s-tag .x{cursor:pointer;opacity:0.6;font-size:9px;margin-left:2px}
+.s-tag .x:hover{opacity:1}
+.tag-f{background:#1e1010;border:1px solid #4a2020;color:#e07070}
+.tag-d{background:#0f1a0f;border:1px solid #1e451e;color:#60c080}
+.tag-m{background:#0f0f1e;border:1px solid #1e1e50;color:#7080e0}
+.s-empty{font-size:11px;color:var(--muted);font-family:var(--mono);font-style:italic}
+ 
+/* QUERY OUTPUT */
+.query-out{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px}
+.q-empty{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;color:var(--muted2);text-align:center;padding:40px;
+}
+.q-empty-icon{font-size:36px;font-family:var(--mono);opacity:0.25}
+.q-empty-text{font-size:12px;color:var(--muted);max-width:260px;line-height:1.7;font-family:var(--mono)}
+ 
+.q-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.q-head{
+  padding:11px 16px;border-bottom:1px solid var(--border);
+  background:var(--surface2);display:flex;align-items:center;gap:10px;
+}
+.q-head-title{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:0.06em}
+.q-head-title strong{color:var(--red);margin-right:4px}
+.q-copy{
+  margin-left:auto;background:transparent;border:1px solid var(--border);
+  color:var(--muted);font-family:var(--mono);font-size:10px;letter-spacing:0.04em;
+  padding:4px 12px;border-radius:var(--r);cursor:pointer;transition:all 0.12s;
+}
+.q-copy:hover{border-color:var(--border2);color:var(--text)}
+.q-copy.ok{border-color:var(--green);color:var(--green)}
+.q-body{padding:18px 16px;overflow-x:auto}
+pre{font-family:var(--mono);font-size:12px;line-height:1.8;white-space:pre;color:#c8c0c0}
+ 
+/* SQL highlight */
+.kw{color:#e05555;font-weight:500}
+.fn{color:#e09040}
+.str{color:#80c870}
+.num{color:#70a0e0}
+.cmt{color:#4a3f3f;font-style:italic}
+.tbl{color:#c0a0f0}
+ 
+.info-note{
+  background:var(--red-soft);border:1px solid var(--red-dim);
+  border-radius:var(--r);padding:10px 14px;
+  font-size:11px;color:#e08080;font-family:var(--mono);line-height:1.6;
+}
+</style>
+</head>
+<body>
+ 
+<!-- HEADER -->
+<header>
+  <div class="logo" onclick="goHome()">
+    <div class="logo-box">QR</div>
+    <div class="logo-name">Queri<span>AR</span></div>
+  </div>
+  <div class="header-crumb" id="header-crumb"></div>
+  <div class="header-right">
+    <span class="badge">BigQuery</span>
+    <button class="btn-back" id="btn-back" style="display:none" onclick="goHome()">← Cambiar caso</button>
+    <button class="btn-gen" id="btn-gen" style="display:none" onclick="generateQuery()">Generar query →</button>
+  </div>
+</header>
+ 
+<!-- ══════════════════════════════
+     SCREEN 1 — SELECTOR
+══════════════════════════════ -->
+<div class="view active" id="screen-select">
+  <div class="select-hero">
+    <h2>¿Con qué equipo estás trabajando?</h2>
+    <p>Seleccioná un caso de uso para continuar</p>
+  </div>
+  <div class="uc-grid" id="uc-grid">
+    <!-- rendered by JS -->
+  </div>
+</div>
+ 
+<!-- ══════════════════════════════
+     SCREEN 2 — BUILDER
+══════════════════════════════ -->
+<div class="view" id="screen-builder">
+ 
+  <aside class="sidebar" id="sidebar"><!-- rendered by JS --></aside>
+ 
+  <main class="main">
+    <div class="summary-bar" id="summary-bar">
+      <span class="s-empty">Seleccioná filtros, dimensiones y métricas →</span>
+    </div>
+    <div class="query-out" id="query-out">
+      <div class="q-empty">
+        <div class="q-empty-icon">{ }</div>
+        <div class="q-empty-text">Configurá los parámetros y hacé clic en Generar query</div>
+      </div>
+    </div>
+  </main>
+ 
+</div>
+ 
+<script>
+// ════════════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════════════
+ 
+const USE_CASES = [
+  {
+    id: 'growth',
+    caseName: 'Por definir',
+    teamName: 'Por definir',
+    desc: 'Comportamiento y performance de usuarios',
+    tags: ['Retención','Conversión','GMV','Incentivos'],
+    mode: 'template',   // template | lookup
+    filters: [
+      { id:'pais',      label:'País',            type:'dropdown', options:['AR','MX','BR','CO','CL','PE','UY','EC','BO','PY'], field:'country' },
+      { id:'ciudad',    label:'Ciudad',           type:'dropdown-search', options:['Buenos Aires','CABA','Córdoba','Rosario','Mendoza','Tucumán','Monterrey','CDMX','Guadalajara','Puebla','São Paulo','Río de Janeiro','Bogotá','Medellín','Santiago','Lima','Montevideo','Quito','La Paz','Asunción'], field:'city' },
+      { id:'lifecycle', label:'Lifecycle',        type:'dropdown', options:['New','Occasional','Regular','Dormant','Churned','Resurrected'], field:'lifecycle_segment' },
+      { id:'intermit',  label:'Intermitencia',    type:'chips',    options:['Alta','Media','Baja'], field:'intermittency' },
+      { id:'income',    label:'Income',           type:'chips',    options:['Low','Mid','High','Unknown'], field:'income_segment' },
+      { id:'qc_user',   label:'QC User',          type:'chips',    options:['true','false'], field:'is_qc_user' },
+      { id:'plus_user', label:'Plus User',        type:'chips',    options:['true','false'], field:'is_plus_user' },
+      { id:'hva',       label:'HVA en fecha',     type:'text',     placeholder:'ej: 2024-01-15 o 2024-W03', field:'hva_date' },
+      { id:'ga',        label:'GA en fecha',      type:'text',     placeholder:'ej: 2024-01-15', field:'ga_date' },
+      { id:'canvas',    label:'Canvas / Test',    type:'text',     placeholder:'ej: canvas_reactivacion_q1', field:'canvas_id' },
+      { id:'ventana',   label:'Ventana de tiempo',type:'chips',    options:['7d','14d','30d','60d','90d'], field:'time_window' },
+      { id:'vertical',  label:'Vertical',         type:'dropdown', options:['Groceries','Liquor','Pharmacy','Pet','LS','Flowers','Electronics'], field:'vertical' },
+      { id:'incentive', label:'Incentive Type',   type:'dropdown', options:['Coupon','Cashback','Free delivery','None','Combo'], field:'incentive_type' },
+    ],
+    dimensions: [
+      { id:'pais',     label:'País',             col:'u.country' },
+      { id:'ciudad',   label:'Ciudad',            col:'u.city' },
+      { id:'lifecycle',label:'Lifecycle',         col:'u.lifecycle_segment' },
+      { id:'intermit', label:'Intermitencia',     col:'u.intermittency' },
+      { id:'income',   label:'Income',            col:'u.income_segment' },
+      { id:'qc_user',  label:'QC User',           col:'u.is_qc_user' },
+      { id:'plus_user',label:'Plus User',         col:'u.is_plus_user' },
+      { id:'ventana',  label:'Ventana de tiempo', col:'DATE_TRUNC(o.order_date, MONTH)' },
+      { id:'vertical', label:'Vertical',          col:'o.vertical' },
+      { id:'incentive',label:'Incentive Type',    col:'o.incentive_type' },
+    ],
+    metrics: [
+      { id:'users',    label:'Usuarios',                   expr:'COUNT(DISTINCT u.user_id)  AS usuarios' },
+      { id:'orders',   label:'Órdenes',                    expr:'COUNT(DISTINCT o.order_id) AS ordenes' },
+      { id:'gmv',      label:'GMV',                        expr:'ROUND(SUM(o.gmv_usd), 2)  AS gmv_usd' },
+      { id:'flgp',     label:'FLGP',                       expr:'ROUND(SUM(o.flgp_usd), 2) AS flgp_usd' },
+      { id:'afv',      label:'AFV',                        expr:'ROUND(SAFE_DIVIDE(SUM(o.gmv_usd), COUNT(DISTINCT o.order_id)), 2) AS afv' },
+      { id:'ret_m1',   label:'Retención M1',               expr:'ROUND(AVG(u.retention_m1), 4) AS retention_m1', cte:'retention' },
+      { id:'ret_m2',   label:'Retención M2',               expr:'ROUND(AVG(u.retention_m2), 4) AS retention_m2', cte:'retention' },
+      { id:'ret_m3',   label:'Retención M3',               expr:'ROUND(AVG(u.retention_m3), 4) AS retention_m3', cte:'retention' },
+      { id:'cvr',      label:'CVR',                        expr:'ROUND(SAFE_DIVIDE(COUNT(DISTINCT o.order_id), COUNT(DISTINCT s.session_id)), 4) AS cvr', cte:'sessions' },
+      { id:'freq',     label:'Freq',                       expr:'ROUND(SAFE_DIVIDE(COUNT(DISTINCT o.order_id), COUNT(DISTINCT u.user_id)), 2) AS freq' },
+      { id:'sessions', label:'Sessions',                   expr:'COUNT(DISTINCT s.session_id) AS sessions', cte:'sessions' },
+      { id:'pct_inc',  label:'% órdenes con incentivo',    expr:'ROUND(SAFE_DIVIDE(COUNTIF(o.has_incentive IS TRUE), COUNT(DISTINCT o.order_id)), 4) AS pct_orders_incentive' },
+      { id:'pct_by_type', label:'% órdenes x tipo incentivo', expr:"ROUND(SAFE_DIVIDE(COUNTIF(o.incentive_type = 'Coupon'), COUNT(DISTINCT o.order_id)), 4) AS pct_coupon\n    , ROUND(SAFE_DIVIDE(COUNTIF(o.incentive_type = 'Cashback'), COUNT(DISTINCT o.order_id)), 4) AS pct_cashback\n    , ROUND(SAFE_DIVIDE(COUNTIF(o.incentive_type = 'Free delivery'), COUNT(DISTINCT o.order_id)), 4) AS pct_free_delivery" },
+      { id:'pen_groc', label:'Penetración Groceries',      expr:"ROUND(SAFE_DIVIDE(COUNTIF(o.vertical = 'Groceries'), COUNT(DISTINCT o.order_id)), 4) AS penetracion_groceries" },
+      { id:'pen_plus', label:'Penetración Plus',           expr:'ROUND(SAFE_DIVIDE(COUNT(DISTINCT IF(u.is_plus_user, u.user_id, NULL)), COUNT(DISTINCT u.user_id)), 4) AS penetracion_plus' },
+    ],
+  },
+  {
+    id: 'qc',
+    caseName: 'Por definir',
+    teamName: 'Por definir',
+    desc: 'Quick commerce — verticales y segmentación',
+    tags: ['Verticales','Core QC','Lifecycle QC','Plus'],
+    mode: 'template',
+    filters: [
+      { id:'pais',       label:'País',                  type:'dropdown',        options:['AR','MX','BR','CO','CL','PE','UY'], field:'country' },
+      { id:'ciudad',     label:'Ciudad',                 type:'dropdown-search', options:['Buenos Aires','CABA','Córdoba','Rosario','Mendoza','Monterrey','CDMX','Guadalajara','São Paulo','Río de Janeiro','Bogotá','Medellín','Santiago','Lima','Montevideo'], field:'city' },
+      { id:'lc_qc',      label:'Lifecycle QC',           type:'dropdown',        options:['New QC','Active QC','Dormant QC','Churned QC','Resurrected QC'], field:'lifecycle_qc' },
+      { id:'seg_core',   label:'Segmentación Core QC',   type:'chips',           options:['Heavy','Medium','Light','Prospect'], field:'core_qc_segment' },
+      { id:'vertical',   label:'Vertical',               type:'dropdown',        options:['Groceries','Liquor','Pharmacy','Pet','LS'], field:'vertical' },
+      { id:'qc_user',    label:'QC User',                type:'chips',           options:['true','false'], field:'is_qc_user' },
+      { id:'plus_user',  label:'Plus User',              type:'chips',           options:['true','false'], field:'is_plus_user' },
+      { id:'ventana',    label:'Ventana de tiempo',      type:'chips',           options:['7d','14d','30d','60d','90d'], field:'time_window' },
+      { id:'income',     label:'Income',                 type:'chips',           options:['Low','Mid','High','Unknown'], field:'income_segment' },
+      { id:'incentive',  label:'Incentive Type',         type:'dropdown',        options:['Coupon','Cashback','Free delivery','None','Combo'], field:'incentive_type' },
+      { id:'canvas',     label:'Canvas / Test',          type:'text',            placeholder:'ej: qc_groceries_push_q1', field:'canvas_id' },
+    ],
+    dimensions: [
+      { id:'pais',     label:'País',                   col:'u.country' },
+      { id:'ciudad',   label:'Ciudad',                  col:'u.city' },
+      { id:'lc_qc',    label:'Lifecycle QC',            col:'u.lifecycle_qc' },
+      { id:'seg_core', label:'Segmentación Core QC',    col:'u.core_qc_segment' },
+      { id:'vertical', label:'Vertical',                col:'o.vertical' },
+      { id:'qc_user',  label:'QC User',                 col:'u.is_qc_user' },
+      { id:'plus_user',label:'Plus User',               col:'u.is_plus_user' },
+      { id:'ventana',  label:'Ventana de tiempo',       col:'DATE_TRUNC(o.order_date, MONTH)' },
+      { id:'incentive',label:'Incentive Type',          col:'o.incentive_type' },
+      { id:'income',   label:'Income',                  col:'u.income_segment' },
+    ],
+    metrics: [
+      { id:'users',    label:'Usuarios',                expr:'COUNT(DISTINCT u.user_id)  AS usuarios' },
+      { id:'orders',   label:'Órdenes',                 expr:'COUNT(DISTINCT o.order_id) AS ordenes' },
+      { id:'gmv',      label:'GMV',                     expr:'ROUND(SUM(o.gmv_usd), 2)  AS gmv_usd' },
+      { id:'flgp',     label:'FLGP',                    expr:'ROUND(SUM(o.flgp_usd), 2) AS flgp_usd' },
+      { id:'afv',      label:'AFV',                     expr:'ROUND(SAFE_DIVIDE(SUM(o.gmv_usd), COUNT(DISTINCT o.order_id)), 2) AS afv' },
+      { id:'freq',     label:'Freq',                    expr:'ROUND(SAFE_DIVIDE(COUNT(DISTINCT o.order_id), COUNT(DISTINCT u.user_id)), 2) AS freq' },
+      { id:'ret_m1',   label:'Retención M1',            expr:'ROUND(AVG(u.retention_m1), 4) AS retention_m1', cte:'retention' },
+      { id:'ret_m2',   label:'Retención M2',            expr:'ROUND(AVG(u.retention_m2), 4) AS retention_m2', cte:'retention' },
+      { id:'ret_m3',   label:'Retención M3',            expr:'ROUND(AVG(u.retention_m3), 4) AS retention_m3', cte:'retention' },
+      { id:'cvr',      label:'CVR',                     expr:'ROUND(SAFE_DIVIDE(COUNT(DISTINCT o.order_id), COUNT(DISTINCT s.session_id)), 4) AS cvr', cte:'sessions' },
+      { id:'sessions', label:'Sessions',                expr:'COUNT(DISTINCT s.session_id) AS sessions', cte:'sessions' },
+      { id:'pen_groc', label:'Penetración Groceries',   expr:"ROUND(SAFE_DIVIDE(COUNTIF(o.vertical = 'Groceries'), COUNT(DISTINCT o.order_id)), 4) AS penetracion_groceries" },
+      { id:'pen_plus', label:'Penetración Plus',        expr:'ROUND(SAFE_DIVIDE(COUNT(DISTINCT IF(u.is_plus_user, u.user_id, NULL)), COUNT(DISTINCT u.user_id)), 4) AS penetracion_plus' },
+      { id:'pct_inc',  label:'% órdenes con incentivo', expr:'ROUND(SAFE_DIVIDE(COUNTIF(o.has_incentive IS TRUE), COUNT(DISTINCT o.order_id)), 4) AS pct_orders_incentive' },
+    ],
+  },
+];
+ 
+// ════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════
+let st = {
+  uc: null,          // active use case config
+  filters: {},       // fid -> [values]
+  dims: new Set(),
+  metrics: new Set(),
+  openDropdown: null,
+};
+ 
+// ════════════════════════════════════════════════
+// SCREEN MANAGEMENT
+// ════════════════════════════════════════════════
+function goHome() {
+  st = { uc: null, filters: {}, dims: new Set(), metrics: new Set(), openDropdown: null };
+  show('screen-select');
+  document.getElementById('header-crumb').innerHTML = '';
+  document.getElementById('btn-back').style.display = 'none';
+  document.getElementById('btn-gen').style.display = 'none';
+  document.getElementById('query-out').innerHTML = `<div class="q-empty"><div class="q-empty-icon">{ }</div><div class="q-empty-text">Configurá los parámetros y hacé clic en Generar query</div></div>`;
+}
+ 
+function show(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+ 
+function selectUseCase(id) {
+  st.uc = USE_CASES.find(u => u.id === id);
+  st.filters = {};
+  st.dims = new Set();
+  st.metrics = new Set();
+ 
+  // Crumb
+  document.getElementById('header-crumb').innerHTML =
+    `<span class="crumb-sep">/</span><span class="crumb-active">Caso: ${st.uc.caseName} · Equipo: ${st.uc.teamName}</span>`;
+ 
+  document.getElementById('btn-back').style.display = '';
+  document.getElementById('btn-gen').style.display = '';
+ 
+  renderSidebar();
+  updateSummary();
+  show('screen-builder');
+}
+ 
+// ════════════════════════════════════════════════
+// RENDER SELECTOR CARDS
+// ════════════════════════════════════════════════
+function renderSelector() {
+  const grid = document.getElementById('uc-grid');
+  grid.innerHTML = USE_CASES.map((uc, i) => `
+    <div class="uc-card" onclick="selectUseCase('${uc.id}')">
+      <div class="uc-card-num">0${i+1}</div>
+      <div>
+        <div class="uc-card-title">Caso de uso: ${uc.caseName}</div>
+        <div class="uc-card-sub">Equipo: ${uc.teamName}</div>
+      </div>
+      <p style="font-size:12px;color:var(--muted);font-family:var(--mono);line-height:1.5">${uc.desc}</p>
+      <div class="uc-card-tags">${uc.tags.map(t=>`<span class="uc-tag">${t}</span>`).join('')}</div>
+      <div class="uc-card-arrow">Seleccionar →</div>
+    </div>
+  `).join('');
+}
+ 
+// ════════════════════════════════════════════════
+// RENDER SIDEBAR
+// ════════════════════════════════════════════════
+function renderSidebar() {
+  const sb = document.getElementById('sidebar');
+  sb.innerHTML = '';
+  renderFiltersSection(sb);
+  renderChipSection(sb, 'Apertura de análisis (dimensiones)', st.uc.dimensions, st.dims, 'dim');
+  renderChipSection(sb, 'Dimensión de impacto (métricas)', st.uc.metrics, st.metrics, 'metric');
+}
+ 
+function renderFiltersSection(sb) {
+  const sec = document.createElement('div');
+  sec.className = 'sb-section';
+  sec.innerHTML = `<div class="sb-label"><span class="dot"></span>Audiencia (filtros WHERE)</div>`;
+ 
+  st.uc.filters.forEach(f => {
+    const fi = document.createElement('div');
+    fi.className = 'fi';
+    const vals = st.filters[f.id] || [];
+    const hasVal = vals.length > 0 || (f.type === 'text' && vals[0]);
+ 
+    fi.innerHTML = `<div class="fi-label">${f.label}${hasVal ? `<span class="fi-clear" onclick="clearFilter('${f.id}')">limpiar</span>` : ''}</div>`;
+ 
+    if (f.type === 'chips') {
+      const row = document.createElement('div');
+      row.className = 'chips';
+      f.options.forEach(opt => {
+        const c = document.createElement('span');
+        c.className = 'chip' + (vals.includes(opt) ? ' sel' : '');
+        c.textContent = opt;
+        c.onclick = () => toggleFilter(f.id, opt, f.type);
+        row.appendChild(c);
+      });
+      fi.appendChild(row);
+    } else if (f.type === 'dropdown' || f.type === 'dropdown-search') {
+      fi.appendChild(buildDropdown(f, vals));
+    } else {
+      const inp = document.createElement('input');
+      inp.className = 'fi-input';
+      inp.type = 'text';
+      inp.placeholder = f.placeholder || '';
+      inp.value = vals[0] || '';
+      inp.addEventListener('input', e => {
+        st.filters[f.id] = e.target.value ? [e.target.value] : [];
+        updateSummary();
+      });
+      fi.appendChild(inp);
+    }
+    sec.appendChild(fi);
+  });
+ 
+  const pad = document.createElement('div');
+  pad.style.height = '4px';
+  sec.appendChild(pad);
+  sb.appendChild(sec);
+}
+ 
+function buildDropdown(f, vals) {
+  const isSearch = f.type === 'dropdown-search';
+  const wrap = document.createElement('div');
+  wrap.className = 'dropdown-wrap';
+ 
+  const label = vals.length === 0 ? 'Seleccioná...'
+    : vals.length === 1 ? vals[0]
+    : `${vals.length} seleccionados`;
+ 
+  wrap.innerHTML = `
+    <div class="dd-trigger" id="ddt-${f.id}" onclick="toggleDropdown('${f.id}')">
+      <span class="dd-trigger-label">${label}</span>
+      ${vals.length > 0 ? `<span class="dd-count">${vals.length}</span>` : ''}
+      <span class="dd-arrow">▾</span>
+    </div>
+    <div class="dd-panel" id="ddp-${f.id}">
+      ${isSearch ? `<div class="dd-search"><span class="dd-search-icon">⌕</span><input type="text" placeholder="Buscar..." id="dds-${f.id}" oninput="filterDropdownOptions('${f.id}', this.value)"></div>` : ''}
+      <div class="dd-options" id="ddo-${f.id}">
+        ${renderDropdownOptions(f, vals, '')}
+      </div>
+    </div>`;
+  return wrap;
+}
+ 
+function renderDropdownOptions(f, vals, query) {
+  const opts = query
+    ? f.options.filter(o => o.toLowerCase().includes(query.toLowerCase()))
+    : f.options;
+  if (opts.length === 0) return `<div class="dd-empty">Sin resultados</div>`;
+  return opts.map(opt => {
+    const sel = vals.includes(opt);
+    return `<div class="dd-opt ${sel ? 'sel' : ''}" onclick="toggleFilter('${f.id}','${opt}','${f.type}')">
+      <div class="dd-check">${sel ? '✓' : ''}</div>
+      ${opt}
+    </div>`;
+  }).join('');
+}
+ 
+function filterDropdownOptions(fid, query) {
+  const f = st.uc.filters.find(x => x.id === fid);
+  const vals = st.filters[fid] || [];
+  document.getElementById('ddo-' + fid).innerHTML = renderDropdownOptions(f, vals, query);
+}
+ 
+function toggleDropdown(fid) {
+  const panel = document.getElementById('ddp-' + fid);
+  const trigger = document.getElementById('ddt-' + fid);
+  const isOpen = panel.classList.contains('open');
+ 
+  // Close all
+  document.querySelectorAll('.dd-panel.open').forEach(p => p.classList.remove('open'));
+  document.querySelectorAll('.dd-trigger.open').forEach(t => t.classList.remove('open'));
+ 
+  if (!isOpen) {
+    panel.classList.add('open');
+    trigger.classList.add('open');
+    st.openDropdown = fid;
+    // Focus search
+    const s = document.getElementById('dds-' + fid);
+    if (s) setTimeout(() => s.focus(), 50);
+  } else {
+    st.openDropdown = null;
+  }
+}
+ 
+// Close dropdowns on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dropdown-wrap')) {
+    document.querySelectorAll('.dd-panel.open').forEach(p => p.classList.remove('open'));
+    document.querySelectorAll('.dd-trigger.open').forEach(t => t.classList.remove('open'));
+    st.openDropdown = null;
+  }
+});
+ 
+// ════════════════════════════════════════════════
+// FILTER TOGGLE
+// ════════════════════════════════════════════════
+function toggleFilter(fid, val, type) {
+  if (!st.filters[fid]) st.filters[fid] = [];
+  const idx = st.filters[fid].indexOf(val);
+  if (idx >= 0) st.filters[fid].splice(idx, 1);
+  else st.filters[fid].push(val);
+ 
+  if (type === 'chips') {
+    renderSidebar(); // re-render chips to show selection
+  } else {
+    // Re-render just the dropdown options
+    const f = st.uc.filters.find(x => x.id === fid);
+    const vals = st.filters[fid];
+    const qEl = document.getElementById('dds-' + fid);
+    const q = qEl ? qEl.value : '';
+    document.getElementById('ddo-' + fid).innerHTML = renderDropdownOptions(f, vals, q);
+ 
+    // Update trigger label
+    const trigger = document.getElementById('ddt-' + fid);
+    if (trigger) {
+      const label = vals.length === 0 ? 'Seleccioná...'
+        : vals.length === 1 ? vals[0]
+        : `${vals.length} seleccionados`;
+      trigger.querySelector('.dd-trigger-label').textContent = label;
+      const cnt = trigger.querySelector('.dd-count');
+      if (vals.length > 0) {
+        if (cnt) cnt.textContent = vals.length;
+        else trigger.insertBefore(Object.assign(document.createElement('span'), {className:'dd-count',textContent:vals.length}), trigger.querySelector('.dd-arrow'));
+      } else if (cnt) cnt.remove();
+    }
+  }
+ 
+  updateSummary();
+}
+ 
+function clearFilter(fid) {
+  st.filters[fid] = [];
+  renderSidebar();
+  updateSummary();
+}
+ 
+function renderChipSection(sb, label, items, set, kind) {
+  const sec = document.createElement('div');
+  sec.className = 'sb-section';
+  sec.innerHTML = `<div class="sb-label"><span class="dot"></span>${label}</div>`;
+  const row = document.createElement('div');
+  row.className = 'chips';
+  row.style.paddingBottom = '4px';
+  items.forEach(item => {
+    const c = document.createElement('span');
+    c.className = 'chip' + (set.has(item.id) ? ' sel' : '');
+    c.textContent = item.label;
+    c.onclick = () => {
+      if (set.has(item.id)) set.delete(item.id);
+      else set.add(item.id);
+      c.classList.toggle('sel');
+      updateSummary();
+    };
+    row.appendChild(c);
+  });
+  sec.appendChild(row);
+  sb.appendChild(sec);
+}
+ 
+// ════════════════════════════════════════════════
+// SUMMARY
+// ════════════════════════════════════════════════
+function updateSummary() {
+  const bar = document.getElementById('summary-bar');
+  const tags = [];
+ 
+  Object.entries(st.filters).forEach(([fid, vals]) => {
+    if (!vals || vals.length === 0) return;
+    const f = st.uc.filters.find(x => x.id === fid);
+    if (!f) return;
+    vals.forEach(v => tags.push(`<span class="s-tag tag-f">${f.label}: ${v}<span class="x" onclick="removeTag('f','${fid}','${v}')">✕</span></span>`));
+  });
+ 
+  st.dims.forEach(did => {
+    const d = st.uc.dimensions.find(x => x.id === did);
+    if (d) tags.push(`<span class="s-tag tag-d">${d.label}<span class="x" onclick="removeTag('d','${did}')">✕</span></span>`);
+  });
+ 
+  st.metrics.forEach(mid => {
+    const m = st.uc.metrics.find(x => x.id === mid);
+    if (m) tags.push(`<span class="s-tag tag-m">${m.label}<span class="x" onclick="removeTag('m','${mid}')">✕</span></span>`);
+  });
+ 
+  bar.innerHTML = tags.length > 0 ? tags.join('') : '<span class="s-empty">Seleccioná filtros, dimensiones y métricas →</span>';
+}
+ 
+function removeTag(kind, id, val) {
+  if (kind === 'f') {
+    st.filters[id] = (st.filters[id] || []).filter(v => v !== val);
+    renderSidebar();
+  } else if (kind === 'd') {
+    st.dims.delete(id);
+    renderSidebar();
+  } else {
+    st.metrics.delete(id);
+    renderSidebar();
+  }
+  updateSummary();
+}
+ 
+// ════════════════════════════════════════════════
+// QUERY GENERATION
+// ════════════════════════════════════════════════
+function generateQuery() {
+  const activeFilters = st.uc.filters.filter(f => {
+    const v = st.filters[f.id];
+    return v && v.length > 0;
+  }).map(f => ({ ...f, values: st.filters[f.id] }));
+ 
+  const activeDims    = st.uc.dimensions.filter(d => st.dims.has(d.id));
+  const activeMetrics = st.uc.metrics.filter(m => st.metrics.has(m.id));
+  const neededCTEs    = new Set(activeMetrics.filter(m => m.cte).map(m => m.cte));
+ 
+  if (activeMetrics.length === 0) {
+    document.getElementById('query-out').innerHTML = `<div class="info-note">Seleccioná al menos una métrica para generar la query.</div>`;
+    return;
+  }
+ 
+  const sql = buildQuery(activeDims, activeMetrics, activeFilters, neededCTEs);
+  const panel = document.getElementById('query-out');
+  panel.innerHTML = '';
+ 
+  if (neededCTEs.size > 0) {
+    const note = document.createElement('div');
+    note.className = 'info-note';
+    note.innerHTML = `<strong>CTEs activadas automáticamente:</strong> ${[...neededCTEs].join(', ')}`;
+    panel.appendChild(note);
+  }
+ 
+  const block = document.createElement('div');
+  block.className = 'q-block';
+  const safeSql = sql.replace(/\\/g,'\\\\').replace(/`/g,'\\`');
+  block.innerHTML = `
+    <div class="q-head">
+      <div class="q-head-title"><strong>#</strong>Equipo ${st.uc.teamName} · ${activeMetrics.length} métrica${activeMetrics.length!==1?'s':''} · ${activeDims.length} dimensión${activeDims.length!==1?'es':''}</div>
+      <button class="q-copy" onclick="copySQL(this, \`${safeSql}\`)">copiar</button>
+    </div>
+    <div class="q-body"><pre>${highlight(sql)}</pre></div>`;
+  panel.appendChild(block);
+}
+ 
+function buildWhereClause(filters) {
+  if (!filters.length) return '  -- (sin filtros adicionales)';
+  return filters.map(f => {
+    const vals = f.values;
+    if (f.field === 'time_window') {
+      const days = Math.max(...vals.map(v => parseInt(v)));
+      return `  AND o.order_date >= DATE_SUB(CURRENT_DATE(), INTERVAL ${days} DAY)`;
+    }
+    if (f.field === 'hva_date') return `  AND EXISTS (\n    SELECT 1 FROM \`project.dataset.hva_events\` hva\n    WHERE hva.user_id = u.user_id\n      AND DATE(hva.event_date) = '${vals[0]}'\n  )`;
+    if (f.field === 'ga_date')  return `  AND EXISTS (\n    SELECT 1 FROM \`project.dataset.ga_events\` ga\n    WHERE ga.user_id = u.user_id\n      AND DATE(ga.event_date) = '${vals[0]}'\n  )`;
+    if (f.field === 'canvas_id') return `  AND u.user_id IN (\n    SELECT user_id\n    FROM \`project.dataset.canvas_membership\`\n    WHERE canvas_id = '${vals[0]}'\n  )`;
+    const isStr = isNaN(vals[0]) && vals[0] !== 'true' && vals[0] !== 'false';
+    if (vals.length === 1) return `  AND ${f.field} = ${isStr ? `'${vals[0]}'` : vals[0]}`;
+    const list = vals.map(v => isStr ? `'${v}'` : v).join(', ');
+    return `  AND ${f.field} IN (${list})`;
+  }).join('\n');
+}
+ 
+function buildQuery(dims, metrics, filters, ctes) {
+  const hasSessions  = ctes.has('sessions');
+  const hasRetention = ctes.has('retention');
+  const where = buildWhereClause(filters);
+ 
+  const dimCols     = dims.map(d => `      ${d.col}  AS ${d.id}`).join('\n    , ');
+  const metricCols  = metrics.map(m => `      ${m.expr}`).join('\n    , ');
+  const groupBy     = dims.map((_, i) => `      ${i + 1}`).join('\n    , ') || '      1';
+ 
+  let cteBlock = '';
+  if (ctes.size > 0) {
+    const parts = [];
+    if (hasRetention) parts.push(
+`  retention_base AS (
+    SELECT
+        user_id
+      , AVG(CASE WHEN months_since_first = 1 AND has_order THEN 1.0 ELSE 0.0 END) AS retention_m1
+      , AVG(CASE WHEN months_since_first = 2 AND has_order THEN 1.0 ELSE 0.0 END) AS retention_m2
+      , AVG(CASE WHEN months_since_first = 3 AND has_order THEN 1.0 ELSE 0.0 END) AS retention_m3
+    FROM \`project.dataset.user_cohort_monthly\`
+    GROUP BY 1
+  )`);
+    if (hasSessions) parts.push(
+`  session_base AS (
+    SELECT
+        user_id
+      , session_id
+      , session_date
+    FROM \`project.dataset.app_sessions\`
+    WHERE session_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)
+  )`);
+    cteBlock = `WITH\n${parts.join('\n\n, ')}\n\n`;
+  }
+ 
+  const joinRet  = hasRetention ? `  LEFT  JOIN retention_base  rb ON rb.user_id = u.user_id\n` : '';
+  const joinSess = hasSessions  ? `  LEFT  JOIN session_base     s  ON s.user_id  = u.user_id\n` : '';
+ 
+  return `${cteBlock}SELECT
+${dimCols ? dimCols + '\n    , ' : '    '}${metricCols.trimStart()}
+ 
+FROM      \`project.dataset.users\`   u
+INNER JOIN \`project.dataset.orders\`  o
+       ON  o.user_id = u.user_id
+      AND  o.status  = 'completed'
+${joinRet}${joinSess}WHERE 1 = 1
+${where}
+ 
+GROUP BY
+${groupBy}
+ 
+ORDER BY
+      1${dims.length > 1 ? ', 2' : ''}`;
+}
+ 
+function highlight(sql) {
+  const kws = ['WITH','SELECT','FROM','WHERE','LEFT','INNER','JOIN','ON','AND','OR','IN','AS','GROUP\\s+BY','ORDER\\s+BY','HAVING','DISTINCT','CASE','WHEN','THEN','ELSE','END','EXISTS','NULL','IS','TRUE','FALSE','INTERVAL','BY','NOT'];
+  const fns = ['COUNT','SUM','AVG','ROUND','SAFE_DIVIDE','COUNTIF','DATE_SUB','DATE_TRUNC','CURRENT_DATE','IF','COALESCE','MAX','MIN','DATE'];
+  let s = sql.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  s = s.replace(/(--[^\n]*)/g,'<span class="cmt">$1</span>');
+  s = s.replace(/'([^']*)'/g,"<span class=\"str\">'$1'</span>");
+  kws.forEach(k => { s = s.replace(new RegExp('\\b('+k+')\\b','gi'),'<span class="kw">$1</span>'); });
+  fns.forEach(fn => { s = s.replace(new RegExp('\\b('+fn+')(?=\\s*\\()','gi'),'<span class="fn">$1</span>'); });
+  s = s.replace(/(`[^`]+`)/g,'<span class="tbl">$1</span>');
+  s = s.replace(/\b(\d+(?:\.\d+)?)\b/g,'<span class="num">$1</span>');
+  return s;
+}
+ 
+function copySQL(btn, sql) {
+  navigator.clipboard.writeText(sql).then(() => {
+    btn.textContent = '✓ copiado';
+    btn.classList.add('ok');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('ok'); }, 2000);
+  });
+}
+ 
+// ════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════
+renderSelector();
+</script>
+</body>
+</html>
